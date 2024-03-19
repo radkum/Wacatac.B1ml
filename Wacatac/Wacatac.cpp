@@ -46,9 +46,16 @@ bool loadFunctions() {
 
     return true;
 }
-
+bool isHooked() {
+    HMODULE mod = GetModuleHandleA("HookPerformer.dll");
+    if (!mod) return false;
+    return true;
+}
 int main()
 {
+    if (isHooked()) {
+        return 0;
+    }
     if (!loadFunctions()) {
         return -1;
     }
